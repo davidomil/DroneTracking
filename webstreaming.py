@@ -114,8 +114,8 @@ def detect_motion(frameCount):
 
 		times.append(end - start)
 
-		if len(times) > 2:
-			times = times[:2]
+		if len(times) > 5:
+			times = times[:4]
 
 		cv2.putText(frame, f"FPS: {round(len(times) / sum(times))}", (0, 100), font, 1, (0, 255, 0), 2, cv2.LINE_AA)
 

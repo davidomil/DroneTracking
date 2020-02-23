@@ -62,7 +62,7 @@ def detect_motion(frameCount):
 		# Start time
 		start = time.time()
 
-		ret, frame = vs.read()
+		frame = vs.read()
 
 		# operations on the frame
 		gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)

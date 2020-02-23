@@ -59,13 +59,13 @@ cv_file.release()
 
 
 
-times = []
+# times = []
 
 ###------------------ ARUCO TRACKER ---------------------------
 while (True):
 
-    # Start time
-    start = time.time()
+    # # Start time
+    # start = time.time()
 
     ret, frame = cap.read()
 
@@ -114,14 +114,14 @@ while (True):
         # code to show 'No Ids' when no markers are found
         cv2.putText(frame, "No Ids", (0,64), font, 1, (0,255,0),2,cv2.LINE_AA)
 
-    end = time.time()
+    # end = time.time()
+    #
+    # times.append(end - start)
+    #
+    # if len(times) > 100:
+    #     times = times[:99]
 
-    times.append(end - start)
-
-    if len(times) > 100:
-        times = times[:99]
-
-    cv2.putText(frame, f"FPS: {len(times)/sum(times)}", (0, 100), font, 1, (0, 255, 0), 2, cv2.LINE_AA)
+    # cv2.putText(frame, f"FPS: {len(times)/sum(times)}", (0, 100), font, 1, (0, 255, 0), 2, cv2.LINE_AA)
 
     # display the resulting frame
     cv2.imshow('frame',frame)

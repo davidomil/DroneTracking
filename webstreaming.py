@@ -2,6 +2,8 @@
 # python webstreaming.py --ip 0.0.0.0 --port 8000
 
 # import the necessary packages
+from cv2 import aruco
+
 from pyimagesearch.motion_detection import SingleMotionDetector
 from imutils.video import VideoStream
 from flask import Response
@@ -29,6 +31,20 @@ app = Flask(__name__)
 vs = VideoStream(src=0).start()
 time.sleep(2.0)
 
+# termination criteria for the iterative algorithm
+criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
+
+# File storage in OpenCV
+cv_file = cv2.FileStorage("calib_images/test.yaml", cv2.FILE_STORAGE_READ)
+
+# Note : we also have to specify the type
+# to retrieve otherwise we only get a 'None'
+# FileNode object back instead of a matrix
+mtx = cv_file.getNode("camera_matrix").mat()
+dist = cv_file.getNode("dist_coeff").mat()
+
+cv_file.release()
+
 @app.route("/")
 def index():
 	# return the rendered template
@@ -39,45 +55,67 @@ def detect_motion(frameCount):
 	# lock variables
 	global vs, outputFrame, lock
 
-	# initialize the motion detector and the total number of frames
-	# read thus far
-	md = SingleMotionDetector(accumWeight=0.1)
-	total = 0
+	times = []
 
 	# loop over frames from the video stream
 	while True:
-		# read the next frame from the video stream, resize it,
-		# convert the frame to grayscale, and blur it
-		frame = vs.read()
-		frame = imutils.resize(frame, width=400)
+		# Start time
+		start = time.time()
+
+		ret, frame = vs.read()
+
+		# operations on the frame
 		gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-		gray = cv2.GaussianBlur(gray, (7, 7), 0)
 
-		# grab the current timestamp and draw it on the frame
-		timestamp = datetime.datetime.now()
-		cv2.putText(frame, timestamp.strftime(
-			"%A %d %B %Y %I:%M:%S%p"), (10, frame.shape[0] - 10),
-			cv2.FONT_HERSHEY_SIMPLEX, 0.35, (0, 0, 255), 1)
+		# set dictionary size depending on the aruco marker selected
+		aruco_dict = aruco.Dictionary_get(aruco.DICT_6X6_250)
 
-		# if the total number of frames has reached a sufficient
-		# number to construct a reasonable background model, then
-		# continue to process the frame
-		if total > frameCount:
-			# detect motion in the image
-			motion = md.detect(gray)
+		# detector parameters can be set here (List of detection parameters[3])
+		parameters = aruco.DetectorParameters_create()
+		parameters.adaptiveThreshConstant = 10
 
-			# cehck to see if motion was found in the frame
-			if motion is not None:
-				# unpack the tuple and draw the box surrounding the
-				# "motion area" on the output frame
-				(thresh, (minX, minY, maxX, maxY)) = motion
-				cv2.rectangle(frame, (minX, minY), (maxX, maxY),
-					(0, 0, 255), 2)
-		
-		# update the background model and increment the total number
-		# of frames read thus far
-		md.update(gray)
-		total += 1
+		# lists of ids and the corners belonging to each id
+		corners, ids, rejectedImgPoints = aruco.detectMarkers(gray, aruco_dict, parameters=parameters)
+
+		# font for displaying text (below)
+		font = cv2.FONT_HERSHEY_SIMPLEX
+
+		# check if the ids list is not empty
+		# if no check is added the code will crash
+		if np.all(ids != None):
+
+			# estimate pose of each marker and return the values
+			# rvet and tvec-different from camera coefficients
+			rvec, tvec, _ = aruco.estimatePoseSingleMarkers(corners, 0.05, mtx, dist)
+			# (rvec-tvec).any() # get rid of that nasty numpy value array error
+
+			for i in range(0, ids.size):
+				# draw axis for the aruco markers
+				aruco.drawAxis(frame, mtx, dist, rvec[i], tvec[i], 0.1)
+
+			# draw a square around the markers
+			aruco.drawDetectedMarkers(frame, corners)
+
+			# code to show ids of the marker found
+			strg = ''
+			for i in range(0, ids.size):
+				strg += str(ids[i][0]) + ', '
+
+			cv2.putText(frame, "Id: " + strg, (0, 64), font, 1, (0, 255, 0), 2, cv2.LINE_AA)
+
+
+		else:
+			# code to show 'No Ids' when no markers are found
+			cv2.putText(frame, "No Ids", (0, 64), font, 1, (0, 255, 0), 2, cv2.LINE_AA)
+
+		end = time.time()
+
+		times.append(end - start)
+
+		if len(times) > 100:
+			times = times[:99]
+
+		cv2.putText(frame, f"FPS: {len(times) / sum(times)}", (0, 100), font, 1, (0, 255, 0), 2, cv2.LINE_AA)
 
 		# acquire the lock, set the output frame, and release the
 		# lock

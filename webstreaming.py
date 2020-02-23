@@ -31,6 +31,7 @@ app = Flask(__name__)
 #vs = VideoStream(usePiCamera=1).start()
 # vs = VideoStream(src=0).start()
 vs = cv2.VideoCapture(0)
+vs.set(cv2.CAP_PROP_FPS, 120)
 time.sleep(2.0)
 
 # termination criteria for the iterative algorithm

@@ -88,7 +88,7 @@ def detect_motion(frameCount):
 
 			# estimate pose of each marker and return the values
 			# rvet and tvec-different from camera coefficients
-			rvec, tvec, _ = aruco.estimatePoseSingleMarkers(corners, 0.05, mtx, dist)
+			rvec, tvec = aruco.estimatePoseSingleMarkers(corners, 0.05, mtx, dist)
 			# (rvec-tvec).any() # get rid of that nasty numpy value array error
 
 			for i in range(0, ids.size):
@@ -114,8 +114,8 @@ def detect_motion(frameCount):
 
 		times.append(end - start)
 
-		if len(times) > 100:
-			times = times[:99]
+		if len(times) > 2:
+			times = times[:2]
 
 		cv2.putText(frame, f"FPS: {round(len(times) / sum(times))}", (0, 100), font, 1, (0, 255, 0), 2, cv2.LINE_AA)
 

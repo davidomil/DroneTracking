@@ -29,7 +29,8 @@ app = Flask(__name__)
 # initialize the video stream and allow the camera sensor to
 # warmup
 #vs = VideoStream(usePiCamera=1).start()
-vs = VideoStream(src=0).start()
+# vs = VideoStream(src=0).start()
+vs = cv2.VideoCapture(0)
 time.sleep(2.0)
 
 # termination criteria for the iterative algorithm
@@ -63,7 +64,7 @@ def detect_motion(frameCount):
 		# Start time
 		start = time.time()
 
-		frame = vs.read()
+		ret, frame = vs.read()
 
 		# operations on the frame
 		gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -116,7 +117,7 @@ def detect_motion(frameCount):
 		if len(times) > 100:
 			times = times[:99]
 
-		cv2.putText(frame, f"FPS: {len(times) / sum(times)}", (0, 100), font, 1, (0, 255, 0), 2, cv2.LINE_AA)
+		cv2.putText(frame, f"FPS: {round(len(times) / sum(times))}", (0, 100), font, 1, (0, 255, 0), 2, cv2.LINE_AA)
 
 		# acquire the lock, set the output frame, and release the
 		# lock

@@ -2,6 +2,7 @@
 # python webstreaming.py --ip 0.0.0.0 --port 8000
 
 # import the necessary packages
+import numpy as np
 from cv2 import aruco
 
 from pyimagesearch.motion_detection import SingleMotionDetector
